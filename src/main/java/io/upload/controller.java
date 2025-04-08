@@ -300,3 +300,45 @@ private int getDueInDays(Long ruleId) {
     return 7; // Placeholder logic
 }
 
+
+
+@Path("/alertAction")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class AlertActionController {
+
+    @Inject
+    AlertActionService alertActionService;
+
+    @PUT
+    @Path("/{alertId}/{action}/{bankId}/{assignedTo}/{assignedRole}")
+    public Response takeAlertAction(@PathParam("alertId") Long alertId,
+                                    @PathParam("action") String action,
+                                    @PathParam("bankId") String bankId,
+                                    @PathParam("assignedTo") String assignedTo,
+                                    @PathParam("assignedRole") String assignedRole,
+                                    @QueryParam("userId") String userId,
+                                    @QueryParam("userRole") String userRole,
+                                    @QueryParam("stage") int stage,
+                                    @QueryParam("comments") String comments,
+                                    @QueryParam("riskManagementAction") String riskManagementAction) {
+
+        if (alertId == null || action == null || bankId == null || assignedRole == null ||
+            userId == null || userRole == null || comments == null || stage <= 0) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("All fields are mandatory and must be valid.").build();
+        }
+
+        try {
+            alertActionService.handleAlertAction(alertId, action, bankId, assignedTo, assignedRole,
+                    userId, userRole, stage, comments, riskManagementAction);
+            return Response.ok("Action '" + action + "' executed successfully.").build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity("Failed to process alert action. Please try again.").build();
+        }
+    }
+}
+
